@@ -163,3 +163,785 @@ EXPOSE 8080
 
 # Start Tomcat server
 CMD ["catalina.sh", "run"]
+
+
+/////////////////////////////////////////////////////
+
+
+## **TASK-4: MAVEN JAVA AUTOMATION**
+
+### **I. Maven Java Automation Steps**
+
+### **Step 1: Open Jenkins**
+
+```
+localhost:8081
+```
+
+New Item → Freestyle Project
+Name: **MavenJava_Build**
+
+### **Configure Project**
+
+Description:
+
+```
+Java Build demo
+```
+
+### **Source Code Management (Git)**
+
+Repo URL:
+
+```
+https://github.com/bhavagna06/Maven.git
+```
+
+Branches:
+
+```
+*/Main   OR   */master
+```
+
+### **Build Steps (Maven)**
+
+1. **Invoke Maven target**
+
+```
+Maven version: MAVEN_HOME
+Goals: clean
+```
+
+2. **Invoke Maven target**
+
+```
+Goals: install
+```
+
+### **Post-build Actions**
+
+1. Archive artifacts:
+
+```
+**/*
+```
+
+2. Build other projects:
+
+```
+Project: MavenJava_Test
+Trigger: Only if build is stable
+```
+
+---
+
+### **Step 3: Create MavenJava_Test**
+
+Description:
+
+```
+Test demo
+```
+
+Build Environment:
+
+```
+Delete workspace before build starts
+```
+
+Build Step – Copy artifacts:
+
+```
+Project name: MavenJava_Build
+Artifacts: **/*
+Build: Stable build only
+```
+
+Build Step – Maven:
+
+```
+Goals: test
+```
+
+Post-build:
+
+```
+Archive artifacts: **/*
+```
+
+---
+
+### **Step 4: Create Pipeline View**
+
+```
+Name: Java_Pipeline
+Layout: Upstream/downstream relationship
+Initial job: MavenJava_Build
+```
+
+---
+
+### **Step 5: Run Pipeline**
+
+Click RUN → check logs via small black console box.
+
+---
+
+## **II. MAVEN WEB AUTOMATION**
+
+### **Step 2: Create MavenWeb_Build**
+
+Description:
+
+```
+Web Build demo
+```
+
+Git Repo:
+
+```
+https://github.com/bhavagna06/maven-web-app.git
+```
+
+Maven Steps:
+
+```
+Goals: clean
+Goals: install
+```
+
+Post-build:
+
+```
+Archive: **/*
+Build other projects: MavenWeb_Test
+Trigger: stable
+```
+
+---
+
+### **Step 3: Create MavenWeb_Test**
+
+Steps identical to Java Test, but push to:
+
+```
+MavenWeb_Deploy
+```
+
+---
+
+### **Step 4: Create MavenWeb_Deploy**
+
+Copy from:
+
+```
+MavenWeb_Test   (Artifacts: **/*)
+```
+
+Deploy WAR:
+
+```
+WAR: **/*.war
+Context path: Webpath
+Container: Tomcat 9.x remote
+Credentials: admin / 1234
+URL: http://localhost:8080/
+```
+
+---
+
+### **Step 5 & 6: Run Pipeline**
+
+Check Tomcat → Open `/webpath`.
+
+---
+
+## **III. QUESTIONS (From PDF)**
+
+(Complete list copied exactly)
+
+I won’t rewrite here to save space unless you want — but I have them ready.
+
+---
+
+# ✅ **WEEK 9 PDF – COMPLETE TEXT (ALL COMMANDS + STEPS + CODE)**
+
+Source: 
+
+---
+
+# **WEEK 9 — SCRIPTED PIPELINE**
+
+---
+
+## **Pipeline Script (full)**
+
+```
+pipeline {
+    agent any
+    tools {
+        maven 'MAVEN-HOME'
+    }
+    stages {
+        stage('git repo & clean') {
+            steps {
+                //bat "rmdir /s /q mavenjava"
+                bat "git clone provide your github link"
+                bat "mvn clean -f mavenjava"
+            }
+        }
+        stage('install') {
+            steps {
+                bat "mvn install -f mavenjava"  #project name#
+            }
+        }
+        stage('test') {
+            steps {
+                bat "mvn test -f mavenjava"
+            }
+        }
+        stage('package') {
+            steps {
+                bat "mvn package -f mavenjava"
+            }
+        }
+    }
+}
+```
+
+---
+
+## **Pipeline Creation Steps**
+
+### **Step 1: New Item → Pipeline**
+
+### **Step 2: Add Description**
+
+```
+Description: pipeline
+```
+
+### **Step 3: Paste Pipeline Script**
+
+In:
+
+```
+Definition → Pipeline script
+```
+
+### **Step 4: Build & Observe Stage View**
+
+Stages:
+`git repo & clean` → `install` → `test` → `package`
+
+---
+
+
+# ✅ **WEEK 11 — CLEAN TEXT (NO SBQs, NO INSTALLATION PART)**
+
+Source: 
+
+---
+
+# **WEEK 11 — JENKINS CI/CD (WEBHOOK + EMAIL)**
+
+---
+
+## **1. Configure GitHub Webhook**
+
+### **Step 1: Add Webhook in GitHub**
+
+1. Open your GitHub repository
+2. Go to:
+
+   ```
+   Settings → Webhooks → Add Webhook
+   ```
+3. Payload URL format:
+
+   ```
+   http://<jenkins-server>/github-webhook/
+   ```
+4. If Jenkins is local, expose it using ngrok:
+
+   ```
+   ngrok.exe http <jenkins-port>
+   ```
+
+   Example URL:
+
+   ```
+   http://abc123.ngrok.io/github-webhook/
+   ```
+5. Content type:
+
+   ```
+   application/json
+   ```
+6. Trigger events:
+
+   ```
+   Just the push event
+   ```
+7. Click **Add webhook**
+
+---
+
+## **2. Configure Jenkins to Accept Webhook**
+
+1. Open Jenkins Dashboard
+2. Open your job → **Configure**
+3. Go to:
+
+   ```
+   Build Triggers
+   ```
+4. Enable:
+
+   ```
+   GitHub hook trigger for GITScm polling
+   ```
+5. Click **Save**
+
+---
+
+## **3. Test Webhook Setup**
+
+1. Make code change
+2. Push to GitHub
+3. Jenkins will auto-start the job
+4. Check the console logs to confirm the build triggered
+
+---
+
+## **Outcome**
+
+* GitHub → Jenkins connection fully automated
+* Every push triggers a Jenkins build pipeline
+
+---
+
+# **NGROK SETUP (used for Webhooks)**
+
+### **Step 1. Download ngrok**
+
+From:
+
+```
+https://ngrok.com/download
+```
+
+### **Step 2. Add Auth Token**
+
+```
+ngrok config add-authtoken <your-token>
+```
+
+### **Step 3. Start ngrok Tunnel**
+
+Assuming Jenkins runs on **8085**:
+
+```
+ngrok http 8085
+```
+
+You will get:
+
+```
+https://1234abcd.ngrok.io -> http://localhost:8085
+```
+
+### **Step 4. Use ngrok URL in GitHub Webhook**
+
+Payload URL:
+
+```
+https://1234abcd.ngrok.io/github-webhook/
+```
+
+---
+
+# **EMAIL NOTIFICATION (Using Gmail App Password)**
+
+## **1. Generate Gmail App Password**
+
+Go to:
+
+```
+Google Account → Security → 2-Step Verification
+```
+
+Then:
+
+```
+Security → App passwords
+```
+
+Create:
+
+```
+App: Other
+Name: Jenkins-Demo
+```
+
+Copy the 16-digit password.
+
+---
+
+## **2. Install Jenkins Email Extension Plugin**
+
+```
+Manage Jenkins → Manage Plugins → Email Extension Plugin
+```
+
+---
+
+## **3. Configure Global Email Settings**
+
+### **A. E-mail Notification Section**
+
+| Field         | Value          |
+| ------------- | -------------- |
+| SMTP Server   | smtp.gmail.com |
+| Use SMTP Auth | Enabled        |
+| User Name     | your Gmail     |
+| Password      | App password   |
+| Use SSL       | Enabled        |
+| SMTP Port     | 465            |
+
+Click **Test configuration**.
+
+---
+
+### **B. Extended E-Mail Notification**
+
+| Field        | Value                   |
+| ------------ | ----------------------- |
+| SMTP Server  | smtp.gmail.com          |
+| SMTP Port    | 465                     |
+| Use SSL      | Enabled                 |
+| Credentials  | Gmail ID + App Password |
+| Content Type | text/html (or default)  |
+
+---
+
+## **4. Configure Email Notification for a Job**
+
+Go to:
+
+```
+Job → Configure → Post-build Actions → Editable Email Notification
+```
+
+Fill fields:
+
+| Field                  | Value                   |
+| ---------------------- | ----------------------- |
+| Project Recipient List | emails                  |
+| Content Type           | text/plain or text/html |
+| Triggers               | Success / Failure       |
+| Attachments            | Optional                |
+
+Click **Save**
+
+---
+
+# ✅ **WEEK 10 — CLEAN TEXT (NO SBQs, NO INSTALLATION PART)**
+
+Source: 
+
+---
+
+# **WEEK 10 — MINIKUBE + NAGIOS AUTOMATION**
+
+---
+
+## **MINIKUBE AUTOMATION**
+
+### **Step 1 — Start Minikube Cluster**
+
+```
+minikube start
+```
+
+---
+
+## **Step 2 — Create Deployment**
+
+Create NGINX deployment:
+
+```
+kubectl create deployment mynginx --image=nginx
+```
+
+---
+
+## **Step 3 — Scale Deployment**
+
+(From screenshot context, command used)
+
+```
+kubectl scale deployment mynginx --replicas=3
+```
+
+---
+
+## **Step 4 — Access NGINX App**
+
+### **Method 1: Port Forwarding**
+
+```
+kubectl port-forward svc/mynginx 8081:80
+```
+
+Open:
+
+```
+http://localhost:8081/
+```
+
+---
+
+# **NAGIOS AUTOMATION**
+
+---
+
+## **Step 1 — Pull Nagios Docker Image**
+
+```
+docker pull jasonrivers/nagios:latest
+```
+
+---
+
+## **Step 2 — Run Nagios Container**
+
+```
+docker run --name nagiosdemo -p 8888:80 jasonrivers/nagios:latest
+```
+
+---
+
+## **Step 3 — Access Nagios Dashboard**
+
+Open:
+
+```
+http://localhost:8888
+```
+
+Default login (from image):
+
+```
+Username: nagiosadmin
+Password: nagios
+```
+
+---
+
+## **Step 4 — Monitor Hosts**
+
+Access:
+
+```
+Nagios → Hosts
+Nagios → Services
+```
+
+---
+
+
+
+AWS
+
+# **2. CREATE MAVEN WEB PROJECT & PUSH TO GITHUB**
+
+(Create project in Eclipse → initialize Git → push to GitHub)
+
+---
+
+# **3. CREATE UBUNTU VM (EC2 INSTANCE)**
+
+### **Stage-by-stage selections (clean text)**
+
+#### **Stage 1 — Name**
+
+```
+ubuntu
+```
+
+#### **Stage 2 — Choose AMI**
+
+```
+Ubuntu Server (Free tier eligible)
+```
+
+#### **Stage 3 — Architecture**
+
+```
+64-bit (x86)
+```
+
+#### **Stage 4 — Instance Type**
+
+```
+t2.micro (1 CPU, 1GB RAM)
+```
+
+#### **Stage 5 — Key Pair**
+
+```
+Create new keypair → Download .pem
+```
+
+#### **Stage 6 — Network Settings**
+
+Enable:
+
+```
+HTTP (80)
+HTTPS (443)
+```
+
+#### **Stage 7 — Storage**
+
+```
+8 GB
+```
+
+#### **Stage 8 — Launch Instance**
+
+#### **Stage 9 — Number of Instances**
+
+```
+1
+```
+
+---
+
+# **4. CONNECT TO EC2 USING SSH**
+
+In your terminal (after cd into keypair folder):
+
+```
+ssh -i "<your-keypair>.pem" ubuntu@<public-ip>
+```
+
+---
+
+# **5. SETUP SOFTWARES INSIDE EC2**
+
+Once connected:
+
+### **Update packages**
+
+```
+sudo apt update
+```
+
+### **Install Docker**
+
+```
+sudo apt-get install docker.io
+```
+
+### **Install Git**
+
+```
+sudo apt install git
+```
+
+### **Install Nano editor**
+
+```
+sudo apt install nano
+```
+
+---
+
+# **6. CLONE THE MAVEN PROJECT**
+
+```
+git clone <your-github-repo-link>
+```
+
+Navigate into project:
+
+```
+cd <project-folder>
+```
+
+---
+
+# **7. CREATE DOCKERFILE**
+
+Open editor:
+
+```
+nano Dockerfile
+```
+
+Paste the Dockerfile from page 9 (clean text):
+
+```
+# use an official java runtime as a parent image
+FROM tomcat:9-jdk17
+
+# Copy the built WAR file to the Tomcat webapps directory
+COPY ./target/*.war /usr/local/tomcat/webapps/
+
+# Expose the port Tomcat is running on
+EXPOSE 8080
+
+# Start Tomcat server
+CMD ["catalina.sh", "run"]
+```
+
+Save:
+
+```
+CTRL + O → Enter → CTRL + X
+```
+
+---
+
+# **8. BUILD THE DOCKER IMAGE**
+
+```
+docker build -t <imagename> .
+```
+
+Check images:
+
+```
+docker images
+```
+
+---
+
+# **9. RUN THE DOCKER CONTAINER**
+
+```
+docker run -d --name app-demo -p 6060:8080 <imagename>
+```
+
+---
+
+# **10. ACCESS THE APP PUBLICLY**
+
+Open browser:
+
+```
+http://<EC2-public-ip>:6060/
+```
+
+If not loading → modify inbound rules:
+
+Enable **port 6060** in:
+
+```
+EC2 → Security Groups → Inbound Rules → Add rule → Custom TCP → 6060 → 0.0.0.0/0
+```
+
+
+
