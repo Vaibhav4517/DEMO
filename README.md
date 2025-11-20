@@ -1,3 +1,161 @@
+@startuml
+' Online Ticket Reservation - Class Diagram (PlantUML)
+
+package "Online Ticket Reservation" {
+  ' Users
+  class User {
+    +userId: UUID
+    +name: String
+    +email: String
+    +phone: String
+    +passwordHash: String
+    +register(): User
+    +login(): boolean
+    +updateProfile(): void
+  }
+
+  class Customer {
+    +loyaltyPoints: int
+    +viewShows(): List<ShowSchedule>
+    +createBooking(schedule: ShowSchedule, seats: List<Seat>): Booking
+    +cancelBooking(b: Booking): boolean
+  }
+
+  class Admin {
+    +createShow(s: Show): Show
+    +createVenue(v: Venue): Venue
+    +createSchedule(s: ShowSchedule): ShowSchedule
+    +managePricing(schedule: ShowSchedule, price: Money): void
+  }
+
+  User <|-- Customer
+  User <|-- Admin
+
+  ' Core domain
+  class Show {
+    +showId: UUID
+    +title: String
+    +description: String
+    +durationMinutes: int
+    +language: String
+    +genres: List<String>
+    +addCast(castMember: String): void
+  }
+
+  class Venue {
+    +venueId: UUID
+    +name: String
+    +location: String
+    +address: String
+    +capacity: int
+  }
+
+  class Screen {
+    +screenId: UUID
+    +name: String
+    +seats: List<Seat>
+  }
+
+  class Seat {
+    +seatId: UUID
+    +row: String
+    +number: int
+    +seatType: String  ' e.g., Regular/VIP/Accessible
+    +isAccessible: boolean
+  }
+
+  class ShowSchedule {
+    +scheduleId: UUID
+    +startTime: DateTime
+    +endTime: DateTime
+    +basePrice: Money
+    +getAvailableSeats(): List<Seat>
+    +holdSeats(seats: List<Seat>, until: DateTime): SeatHold
+  }
+
+  class SeatHold {
+    +holdId: UUID
+    +seats: List<Seat>
+    +expiresAt: DateTime
+    +isExpired(): boolean
+  }
+
+  class Booking {
+    +bookingId: UUID
+    +createdAt: DateTime
+    +status: BookingStatus
+    +totalAmount: Money
+    +confirm(payment: Payment): boolean
+    +cancel(): boolean
+  }
+
+  class Ticket {
+    +ticketId: UUID
+    +seat: Seat
+    +price: Money
+    +status: TicketStatus
+  }
+
+  class Payment {
+    +paymentId: UUID
+    +amount: Money
+    +method: PaymentMethod
+    +status: PaymentStatus
+    +process(): boolean
+  }
+
+  class Promotion {
+    +code: String
+    +discountPercent: float
+    +validFrom: Date
+    +validTo: Date
+    +apply(amount: Money): Money
+  }
+
+  ' Associations / multiplicities
+  ShowSchedule "1" o-- "1" Show
+  ShowSchedule "1" -- "1" Screen
+  Venue "1" o-- "*" Screen
+  Screen "1" o-- "*" Seat
+
+  ShowSchedule "1" o-- "*" SeatHold
+  SeatHold "1" -- "*" Seat
+
+  Customer "1" -- "*" Booking
+  Booking "1" o-- "*" Ticket
+  Ticket "*" -- "1" Seat
+  Booking "1" -- "0..1" Payment
+  Booking "0..1" -- "0..1" Promotion
+
+  ' Enums
+  enum BookingStatus {
+    CREATED
+    CONFIRMED
+    CANCELLED
+    EXPIRED
+  }
+
+  enum TicketStatus {
+    RESERVED
+    SOLD
+    CANCELLED
+  }
+
+  enum PaymentMethod {
+    CARD
+    NETBANKING
+    UPI
+    WALLET
+  }
+
+  enum PaymentStatus {
+    PENDING
+    SUCCESS
+    FAILED
+  }
+}
+@enduml
+
 **MINIKUBE**
 
 minikube start --driver=docker
